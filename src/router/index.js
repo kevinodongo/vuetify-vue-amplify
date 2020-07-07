@@ -1,28 +1,32 @@
 import Vue from "vue";
 import VueRouter from "vue-router";
-import Home from "../views/Home.vue";
+import routes from "./routes";
 
 Vue.use(VueRouter);
-
-const routes = [
-  {
-    path: "/",
-    name: "Home",
-    component: Home
-  },
-  {
-    path: "/about",
-    name: "About",
-    // route level code-splitting
-    // this generates a separate chunk (about.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () =>
-      import(/* webpackChunkName: "about" */ "../views/About.vue")
-  }
-];
 
 const router = new VueRouter({
   routes
 });
+
+/* eslint-disable */
+router.beforeResolve((to, from, next) => {
+  if (to.matched.some(record => record.meta.requiresAuth)) {
+    let user;
+    Vue.prototype.$Amplify.Auth.currentAuthenticatedUser()
+      .then(data => {
+        if (data && data.signInUserSession) {
+          user = data;
+        }
+        next();
+      })
+      .catch(e => {
+        next({
+          path: "/"
+        });
+      });
+  }
+  next();
+});
+
 
 export default router;
